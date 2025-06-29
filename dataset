@@ -1,0 +1,80 @@
+import os
+
+# Function to collect PNG images from a folder
+def collect_png_from_folder(folder_path):
+    png_files = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".png"):
+                png_files.append(os.path.join(root, file))
+    return sorted(png_files)
+
+# Collect images and labels
+image_files = collect_png_from_folder(image_folder_path)
+label_files = collect_png_from_folder(label_folder_path)
+
+print(f"Found {len(image_files)} images and {len(label_files)} labels.")
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Function to load, preprocess, and filter images
+def load_image(image_path, target_size=(256, 256), filter_size=3):
+    # Load the image in grayscale
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        raise ValueError(f"Unable to load image: {image_path}")
+
+    # Resize the image
+    image = cv2.resize(image, target_size)
+
+    # Apply median filtering
+    image = cv2.medianBlur(image, filter_size)
+
+    # Normalize the image
+    image = image.astype('float32') / 255.0
+    return image
+
+# Function to load and preprocess labels
+def load_label(label_path, target_size=(256, 256)):
+    label = cv2.imread(label_path, cv2.IMREAD_COLOR)
+    if label is None:
+        raise ValueError(f"Unable to load label image: {label_path}")
+
+    # Resize the label
+    label = cv2.resize(label, target_size)
+
+    # Extract the red channel
+    red_channel = label[:, :, 2]
+
+    # Apply a threshold to create a binary mask
+    threshold = 80
+    binary_mask = (red_channel > threshold).astype('float32')
+
+    return label, binary_mask
+
+import cv2
+import numpy as np
+
+def load_images(image_paths, target_size=(256, 256), filter_size=3):
+    images = [load_image(path, target_size, filter_size) for path in image_paths]
+    return np.array(images)
+
+def load_labels(label_paths, target_size=(256, 256)):
+    labels = [load_label(path, target_size)[1] for path in label_paths]
+    return np.array(labels)
+
+# Load images and labels
+images = load_images(image_files)
+labels = load_labels(label_files)
+
+from sklearn.model_selection import train_test_split
+
+# Splitting data: 60% training, 20% validation, 20% test
+X_train, X_temp, y_train, y_temp = train_test_split(images, labels, test_size=0.4, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+
+print(f"Training set: {X_train.shape[0]} samples")
+print(f"Validation set: {X_val.shape[0]} samples")
+print(f"Test set: {X_test.shape[0]} samples")
