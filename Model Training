@@ -1,0 +1,49 @@
+import matplotlib.pyplot as plt
+from tensorflow.keras.callbacks import EarlyStopping
+
+# Define EarlyStopping callback
+early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+
+# Train the model with EarlyStopping
+history = model.fit(X_train, y_train,
+                    epochs=50,
+                    batch_size=16,
+                    validation_data=(X_val, y_val),
+                    callbacks=[early_stopping])
+
+# Save the model
+model.save('/content/unet_real_data.h5')
+
+# Function to Plot Accuracy
+def plot_accuracy(history):
+    epochs = range(1, len(history.history['accuracy']) + 1)
+
+    # Plot Training and Validation Accuracy
+    plt.figure(figsize=(6, 4))
+    plt.plot(epochs, history.history['accuracy'], 'bo-', label='Training Accuracy')
+    plt.plot(epochs, history.history['val_accuracy'], 'ro-', label='Validation Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# Function to Plot Loss
+def plot_loss(history):
+    epochs = range(1, len(history.history['loss']) + 1)
+
+    # Plot Training and Validation Loss
+    plt.figure(figsize=(6, 4))
+    plt.plot(epochs, history.history['loss'], 'bo-', label='Training Loss')
+    plt.plot(epochs, history.history['val_loss'], 'ro-', label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# Call the functions to plot accuracy and loss
+plot_accuracy(history)
+plot_loss(history)
