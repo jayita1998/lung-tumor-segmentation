@@ -1,0 +1,50 @@
+def dice_coefficient(y_true, y_pred):
+    y_pred = tf.keras.backend.squeeze(y_pred, axis=-1)
+    y_true = tf.keras.backend.cast(y_true, y_pred.dtype)
+    y_true_f = tf.keras.backend.flatten(y_true)
+    y_pred_f = tf.keras.backend.flatten(y_pred)
+    intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+    return (2. * intersection + tf.keras.backend.epsilon()) / (
+            tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + tf.keras.backend.epsilon())
+
+def positive_predictive_value(y_true, y_pred):
+    y_pred = tf.keras.backend.squeeze(y_pred, axis=-1)
+    y_true = tf.keras.backend.cast(y_true, y_pred.dtype)
+    y_true_f = tf.keras.backend.flatten(y_true)
+    y_pred_f = tf.keras.backend.flatten(y_pred)
+    true_positives = tf.keras.backend.sum(tf.keras.backend.round(tf.keras.backend.clip(y_true_f * y_pred_f, 0, 1)))
+    predicted_positives = tf.keras.backend.sum(tf.keras.backend.round(tf.keras.backend.clip(y_pred_f, 0, 1)))
+    return true_positives / (predicted_positives + tf.keras.backend.epsilon())
+
+def sensitivity(y_true, y_pred):
+    y_pred = tf.keras.backend.squeeze(y_pred, axis=-1)
+    y_true = tf.keras.backend.cast(y_true, y_pred.dtype)
+    y_true_f = tf.keras.backend.flatten(y_true)
+    y_pred_f = tf.keras.backend.flatten(y_pred)
+    true_positives = tf.keras.backend.sum(tf.keras.backend.round(tf.keras.backend.clip(y_true_f * y_pred_f, 0, 1)))
+    possible_positives = tf.keras.backend.sum(tf.keras.backend.round(tf.keras.backend.clip(y_true_f, 0, 1)))
+    return true_positives / (possible_positives + tf.keras.backend.epsilon())
+
+# Custom accuracy function
+def accuracy(y_true, y_pred):
+    y_pred = tf.keras.backend.squeeze(y_pred, axis=-1)
+    y_true = tf.keras.backend.cast(y_true, y_pred.dtype)
+    correct_predictions = tf.keras.backend.equal(y_true, tf.keras.backend.round(y_pred))
+    return tf.keras.backend.mean(tf.keras.backend.cast(correct_predictions, tf.float32))
+
+# Evaluate model on the test set
+y_pred = model.predict(X_test)
+
+# Convert predictions to binary thresholding
+y_pred_binary = (y_pred > 0.5).astype(np.float32)
+
+# Calculate metrics
+dice = dice_coefficient(y_test, y_pred_binary).numpy()
+ppv = positive_predictive_value(y_test, y_pred_binary).numpy()
+sens = sensitivity(y_test, y_pred_binary).numpy()
+acc = accuracy(y_test, y_pred_binary).numpy()
+
+print(f"Dice Coefficient: {dice:.4f}")
+print(f"Positive Predictive Value (PPV): {ppv:.4f}")
+print(f"Sensitivity: {sens:.4f}")
+print(f"Accuracy: {acc:.4f}")
